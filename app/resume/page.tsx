@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/card';
 import { DashboardLayout } from '@/components/dashboard-layout';
+import { ResumeSource, addResumeRecord, parseResumeProfile } from '@/lib/resume';
 
 type UploadStatus = 'No file selected' | 'TXT extracted successfully' | 'Parsing coming next' | 'Unsupported file type';
 
@@ -22,6 +23,7 @@ export default function ResumePage() {
   const [fileSize, setFileSize] = useState('');
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('No file selected');
   const [resumeText, setResumeText] = useState('');
+  const [resumeName, setResumeName] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
@@ -42,6 +44,9 @@ export default function ResumePage() {
     setFileName(selectedFile.name);
     setFileSize(formatFileSize(selectedFile.size));
     setStoredFile(selectedFile);
+    if (!resumeName) {
+      setResumeName(selectedFile.name.replace(/\.[^/.]+$/, ''));
+    }
     setSaveMessage('');
 
     const extension = selectedFile.name.split('.').pop()?.toLowerCase();
@@ -62,8 +67,39 @@ export default function ResumePage() {
   };
 
   const handleSaveResume = () => {
-    window.localStorage.setItem('applisynai_resume_text', resumeText);
-    setSaveMessage('Resume text saved locally.');
+    const cleanText = resumeText.trim();
+    if (!cleanText) {
+      setSaveMessage('Please add resume text before saving.');
+      return;
+    }
+
+    const parsedProfile = parseResumeProfile(cleanText);
+    const source: ResumeSource = storedFile ? 'uploaded' : 'pasted';
+    const resumeRecord = {
+      id: `resume_${Date.now()}`,
+      name: resumeName.trim() || 'Untitled Resume',
+      source,
+      fileName: fileName || 'Manual paste',
+      createdAt: new Date().toISOString(),
+      resumeText: cleanText,
+      parsedProfile,
+    };
+
+    addResumeRecord(resumeRecord);
+    window.localStorage.setItem('applisynai_resume_text', cleanText);
+    window.localStorage.setItem('applisynai_user_profile', JSON.stringify(parsedProfile));
+
+    setSaveMessage('Resume saved as reusable asset. Parsed profile synced to signup.');
+  };
+
+  const handleUploadAnother = () => {
+    setStoredFile(null);
+    setFileName('');
+    setFileSize('');
+    setUploadStatus('No file selected');
+    setResumeText('');
+    setResumeName('');
+    setSaveMessage('Ready for another resume.');
   };
 
   return (
@@ -98,11 +134,19 @@ export default function ResumePage() {
             <p>
               <span className="font-semibold">Upload status:</span> {uploadStatus}
             </p>
-            {storedFile && (
-              <p>
-                <span className="font-semibold">File selected:</span> Ready
-              </p>
-            )}
+          </div>
+
+          <div>
+            <label htmlFor="resume-name" className="mb-2 block text-sm font-semibold text-slate-700">
+              Resume name
+            </label>
+            <input
+              id="resume-name"
+              value={resumeName}
+              onChange={(event) => setResumeName(event.target.value)}
+              placeholder="e.g. DevOps Resume"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm text-slate-700"
+            />
           </div>
 
           <div>
@@ -126,6 +170,13 @@ export default function ResumePage() {
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
             >
               Save Resume
+            </button>
+            <button
+              type="button"
+              onClick={handleUploadAnother}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-slate-700"
+            >
+              Upload another resume
             </button>
             <Link
               href="/matcher"
