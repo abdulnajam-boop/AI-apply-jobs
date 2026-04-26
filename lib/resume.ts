@@ -45,6 +45,12 @@ const emptyProfile: ParsedProfile = {
   recentTitles: '',
 };
 
+export function getCurrentOwnerId() {
+  const authUser = getAuthUser();
+  if (!authUser) return 'anonymous';
+  return authUser.id || authUser.email || authUser.name;
+}
+
 export function getResumes(): ResumeRecord[] {
   if (typeof window === 'undefined') return [];
 
@@ -63,10 +69,22 @@ export function saveResumes(resumes: ResumeRecord[]) {
   window.localStorage.setItem(RESUMES_KEY, JSON.stringify(resumes));
 }
 
+export function getResumesForOwner(ownerId: string) {
+  return getResumes().filter((resume) => resume.ownerId === ownerId);
+}
+
 export function getResumesForCurrentUser() {
-  const authUser = getAuthUser();
-  if (!authUser) return [];
-  return getResumes().filter((resume) => resume.ownerId === authUser.id);
+  return getResumesForOwner(getCurrentOwnerId());
+}
+
+export function getActiveResumeId() {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem(ACTIVE_RESUME_KEY) || '';
+}
+
+export function setActiveResumeId(resumeId: string) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(ACTIVE_RESUME_KEY, resumeId);
 }
 
 export function parseResumeProfile(text: string): ParsedProfile {

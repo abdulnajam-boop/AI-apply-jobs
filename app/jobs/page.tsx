@@ -6,7 +6,12 @@ export default function JobsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        <ResumeSelector title="Active resume for tracking" />
+        <ResumeSelector title="Select resume for job tracker" />
+
+        <div className="rounded-lg border border-dashed border-border bg-slate-50 p-4 text-sm text-slate-600">
+          This selected resume will be used for future auto-fill and job applications.
+        </div>
+
         <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">Job Tracker</h2>
           <p className="mt-1 text-sm text-slate-500">Track applications with mock data.</p>
@@ -25,9 +30,7 @@ export default function JobsPage() {
                   <tr key={`${job.company}-${job.role}`}>
                     <td className="px-4 py-3 text-slate-700">{job.company}</td>
                     <td className="px-4 py-3 text-slate-900">{job.role}</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{job.status}</span>
-                    </td>
+                    <td className="px-4 py-3"><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{job.status}</span></td>
                   </tr>
                 ))}
               </tbody>

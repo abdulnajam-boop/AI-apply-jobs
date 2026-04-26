@@ -1,21 +1,21 @@
 'use client';
 
-import Link from 'next/link';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/card';
 import { DashboardLayout } from '@/components/dashboard-layout';
-import { getAuthUser } from '@/lib/auth';
 import {
-  ACTIVE_RESUME_KEY,
   ResumeRecord,
   ResumeSource,
   deleteResumeById,
+  getActiveResumeId,
+  getCurrentOwnerId,
   getResumesForCurrentUser,
   parseResumeProfile,
+  setActiveResumeId,
   upsertResume,
 } from '@/lib/resume';
 
-type UploadStatus = 'No file selected' | 'TXT extracted successfully' | 'Parsing coming next, paste text below' | 'Unsupported file type';
+type UploadStatus = 'No file selected' | 'TXT extracted successfully' | 'PDF/DOCX parsing coming next. Paste resume text below for now.' | 'Unsupported file type';
 
 const acceptedTypes = '.pdf,.docx,.txt';
 
@@ -35,13 +35,12 @@ export default function ResumePage() {
   const [resumeName, setResumeName] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
   const [savedResumes, setSavedResumes] = useState<ResumeRecord[]>([]);
-  const [activeResumeId, setActiveResumeId] = useState('');
+  const [activeResumeId, setActiveResumeIdState] = useState('');
 
   const refreshUserResumes = () => {
     const resumes = getResumesForCurrentUser();
     setSavedResumes(resumes);
-    const localActive = window.localStorage.getItem(ACTIVE_RESUME_KEY) || resumes[0]?.id || '';
-    setActiveResumeId(localActive);
+    setActiveResumeIdState(getActiveResumeId() || resumes[0]?.id || '');
   };
 
   useEffect(() => {
@@ -62,19 +61,17 @@ export default function ResumePage() {
     if (!resumeName) {
       setResumeName(selectedFile.name.replace(/\.[^/.]+$/, ''));
     }
-    setSaveMessage('');
 
     const extension = selectedFile.name.split('.').pop()?.toLowerCase();
 
     if (extension === 'txt') {
-      const text = await selectedFile.text();
-      setResumeText(text);
+      setResumeText(await selectedFile.text());
       setUploadStatus('TXT extracted successfully');
       return;
     }
 
     if (extension === 'pdf' || extension === 'docx') {
-      setUploadStatus('Parsing coming next, paste text below');
+      setUploadStatus('PDF/DOCX parsing coming next. Paste resume text below for now.');
       return;
     }
 
@@ -82,22 +79,20 @@ export default function ResumePage() {
   };
 
   const handleSaveResume = () => {
-    const authUser = getAuthUser();
-    if (!authUser) return;
-
     const cleanText = resumeText.trim();
     if (!cleanText) {
       setSaveMessage('Please add resume text before saving.');
       return;
     }
 
+    const ownerId = getCurrentOwnerId();
     const parsedProfile = parseResumeProfile(cleanText);
     const source: ResumeSource = storedFile ? 'uploaded' : 'pasted';
     const now = new Date().toISOString();
 
     const resumeRecord: ResumeRecord = {
       id: `resume_${Date.now()}`,
-      ownerId: authUser.id,
+      ownerId,
       name: resumeName.trim() || 'Untitled Resume',
       source,
       fileName: fileName || 'Manual paste',
@@ -110,17 +105,16 @@ export default function ResumePage() {
     };
 
     upsertResume(resumeRecord);
-    window.localStorage.setItem(ACTIVE_RESUME_KEY, resumeRecord.id);
-    window.localStorage.setItem('applisynai_user_profile', JSON.stringify({ ownerId: authUser.id, ...parsedProfile }));
+    setActiveResumeId(resumeRecord.id);
+    window.localStorage.setItem('applisynai_user_profile', JSON.stringify({ ownerId, ...parsedProfile }));
 
-    setSaveMessage('Resume saved successfully.');
+    setSaveMessage('Resume saved to your library');
     refreshUserResumes();
   };
 
-  const handleUseResume = (resumeId: string) => {
-    window.localStorage.setItem(ACTIVE_RESUME_KEY, resumeId);
+  const handleSelectResume = (resumeId: string) => {
     setActiveResumeId(resumeId);
-    setSaveMessage('Active resume updated.');
+    setActiveResumeIdState(resumeId);
   };
 
   const handleRenameResume = (resume: ResumeRecord) => {
@@ -133,9 +127,8 @@ export default function ResumePage() {
 
   const handleDeleteResume = (resumeId: string) => {
     deleteResumeById(resumeId);
-    const currentActive = window.localStorage.getItem(ACTIVE_RESUME_KEY);
-    if (currentActive === resumeId) {
-      window.localStorage.removeItem(ACTIVE_RESUME_KEY);
+    if (getActiveResumeId() === resumeId) {
+      setActiveResumeId('');
     }
     refreshUserResumes();
   };
@@ -147,103 +140,63 @@ export default function ResumePage() {
           <div className="space-y-6">
             <div className="rounded-lg border border-dashed border-border bg-slate-50 p-8 text-center">
               <p className="text-sm text-slate-600">Accepted formats: PDF, DOCX, TXT</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={acceptedTypes}
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <button
-                type="button"
-                onClick={handleFileClick}
-                className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-              >
+              <input ref={fileInputRef} type="file" accept={acceptedTypes} className="hidden" onChange={handleFileChange} />
+              <button type="button" onClick={handleFileClick} className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
                 Select File
               </button>
             </div>
 
             <div className="grid gap-2 rounded-lg border border-border bg-white p-4 text-sm text-slate-700">
-              <p>
-                <span className="font-semibold">File name:</span> {fileName || '—'}
-              </p>
-              <p>
-                <span className="font-semibold">File size:</span> {fileSize ? formatFileSize(fileSize) : '—'}
-              </p>
-              <p>
-                <span className="font-semibold">Upload status:</span> {uploadStatus}
-              </p>
+              <p><span className="font-semibold">File name:</span> {fileName || '—'}</p>
+              <p><span className="font-semibold">File size:</span> {fileSize ? formatFileSize(fileSize) : '—'}</p>
+              <p><span className="font-semibold">Upload status:</span> {uploadStatus}</p>
             </div>
 
-            <div>
-              <label htmlFor="resume-name" className="mb-2 block text-sm font-semibold text-slate-700">
-                Resume name
-              </label>
-              <input
-                id="resume-name"
-                value={resumeName}
-                onChange={(event) => setResumeName(event.target.value)}
-                placeholder="e.g. DevOps Resume"
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-slate-700"
-              />
-            </div>
+            <input
+              value={resumeName}
+              onChange={(event) => setResumeName(event.target.value)}
+              placeholder="Resume name (e.g. DevOps Resume)"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+            />
 
-            <div>
-              <label htmlFor="resume-text" className="mb-2 block text-sm font-semibold text-slate-700">
-                Resume text
-              </label>
-              <textarea
-                id="resume-text"
-                value={resumeText}
-                onChange={(event) => setResumeText(event.target.value)}
-                rows={12}
-                placeholder="Paste your resume text here..."
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-slate-700"
-              />
-            </div>
+            <textarea
+              value={resumeText}
+              onChange={(event) => setResumeText(event.target.value)}
+              rows={12}
+              placeholder="Paste your resume text here..."
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+            />
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSaveResume}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-              >
-                Save Resume
-              </button>
-              <Link
-                href="/matcher"
-                className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-              >
-                Continue to Job Matcher
-              </Link>
-            </div>
+            <button type="button" onClick={handleSaveResume} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+              Save Resume
+            </button>
 
             {saveMessage && <p className="text-sm font-medium text-emerald-700">{saveMessage}</p>}
           </div>
         </Card>
 
-        <Card title="Your Resume Library" description="Manage saved resumes for this account.">
+        <Card title="Your Resume Library" description="Saved resumes for this account.">
           <div className="space-y-3">
-            {savedResumes.length === 0 && <p className="text-sm text-slate-500">No resumes yet. Save one above to get started.</p>}
+            {savedResumes.length === 0 && <p className="text-sm text-slate-500">No saved resumes yet.</p>}
             {savedResumes.map((resume) => (
               <div key={resume.id} className="rounded-lg border border-border p-3 text-sm">
                 <p className="font-semibold text-slate-900">{resume.name}</p>
-                <p className="text-xs text-slate-500">{resume.fileName} · {resume.source}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => handleUseResume(resume.id)} className="rounded-md border px-2 py-1 text-xs">
-                    {activeResumeId === resume.id ? 'Active' : 'Select active resume'}
-                  </button>
-                  <button type="button" onClick={() => handleRenameResume(resume)} className="rounded-md border px-2 py-1 text-xs">
-                    Rename
-                  </button>
-                  <button type="button" onClick={() => handleDeleteResume(resume.id)} className="rounded-md border px-2 py-1 text-xs text-rose-600">
-                    Delete
-                  </button>
+                <p className="text-xs text-slate-500">{resume.source} · {resume.fileName} · {new Date(resume.createdAt).toLocaleDateString()}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {activeResumeId === resume.id && <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">Active</span>}
+                  <button type="button" onClick={() => handleSelectResume(resume.id)} className="rounded-md border px-2 py-1 text-xs">Select</button>
+                  <button type="button" onClick={() => handleRenameResume(resume)} className="rounded-md border px-2 py-1 text-xs">Rename</button>
+                  <button type="button" onClick={() => handleDeleteResume(resume.id)} className="rounded-md border px-2 py-1 text-xs text-rose-600">Delete</button>
                 </div>
               </div>
             ))}
           </div>
         </Card>
+
+        <div className="rounded-lg border border-dashed border-border bg-slate-50 p-3 text-xs text-slate-500">
+          <p>Saved resumes count: {savedResumes.length}</p>
+          <p>Active resume id: {activeResumeId || 'none'}</p>
+        </div>
       </div>
     </DashboardLayout>
   );
