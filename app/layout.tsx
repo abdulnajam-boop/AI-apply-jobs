@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AI Job Search Assistant',
-  description: 'Production-ready MVP for an AI-powered job search workflow.',
+  title: 'Applisynai',
+  description: 'Smarter job matching. Better applications. AI-powered workflow for matching, tailoring, and tracking applications.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
