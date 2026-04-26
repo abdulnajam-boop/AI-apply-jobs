@@ -2,28 +2,30 @@ import Link from 'next/link';
 import { HeroVisual } from '@/components/hero-visual';
 import { Navbar } from '@/components/navbar';
 
+const trustBadges = ['1 free match', 'No blind auto-apply', 'Human approval first'];
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Navbar />
       <main className="mx-auto max-w-7xl px-6 py-16 md:py-24">
-        <section className="grid items-center gap-10 lg:grid-cols-2">
+        <section className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600">APPLISYNAI</p>
             <h1 className="mt-4 text-3xl font-bold leading-tight md:text-5xl">
               Apply smarter and land better jobs with AI-powered matching.
             </h1>
-            <p className="mt-5 text-base text-slate-600 md:text-lg">
+            <p className="mt-5 max-w-2xl text-base text-slate-600 md:text-lg">
               Applisynai analyzes your resume, compares it with real job descriptions, and helps you apply with
               precision — not spam.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/signin"
+                href="/matcher"
                 className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-700"
               >
-                Get Started
+                Try Free Match
               </Link>
               <Link
                 href="/upgrade"
@@ -35,6 +37,17 @@ export default function LandingPage() {
             <p className="mt-4 text-sm font-medium text-indigo-700">
               One free match included. Upgrade anytime for unlimited AI job matching.
             </p>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {trustBadges.map((badge) => (
+                <span
+                  key={badge}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm"
+                >
+                  {badge}
+                </span>
+              ))}
+            </div>
           </div>
           <HeroVisual />
         </section>

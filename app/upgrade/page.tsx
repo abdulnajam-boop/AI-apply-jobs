@@ -20,7 +20,8 @@ export default function UpgradePage() {
             </ul>
           </section>
 
-          <section className="rounded-xl border-2 border-indigo-500 bg-white p-6 shadow-sm">
+          <section className="relative rounded-xl border-2 border-indigo-500 bg-gradient-to-b from-indigo-50 to-white p-6 shadow-md">
+            <span className="absolute -top-3 left-4 rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">Most popular</span>
             <h2 className="text-xl font-semibold">Pro</h2>
             <p className="mt-1 text-2xl font-bold text-slate-900">$9.99/month</p>
             <ul className="mt-4 space-y-2 text-sm text-slate-700">
@@ -35,6 +36,8 @@ export default function UpgradePage() {
             </Link>
           </section>
         </div>
+
+        <p className="mt-6 text-sm text-slate-500">Stripe/payment coming soon. Pricing UI only for MVP.</p>
       </main>
     </div>
   );

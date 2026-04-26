@@ -4,7 +4,6 @@ const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
   { href: '/upgrade', label: 'Upgrade' },
-  { href: '/signin', label: 'Sign In' },
 ];
 
 export function Navbar() {
@@ -54,9 +53,15 @@ export function Navbar() {
           </nav>
           <Link
             href="/signin"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/signup"
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
           >
-            Get Started
+            Sign Up
           </Link>
         </div>
       </div>
