@@ -1,45 +1,14 @@
-import Link from 'next/link';
-
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About Us' },
-  { href: '/upgrade', label: 'Upgrade' },
-  { href: '/signin', label: 'Sign In' },
-];
-
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-sky-500 text-lg font-black text-white shadow-md">
-            A
-          </div>
-          <div>
-            <p className="text-base font-bold text-slate-900">Applisynai</p>
-            <p className="text-xs text-slate-500">Smarter job matching. Better applications.</p>
-          </div>
-        </Link>
-
-        <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          <nav className="flex flex-wrap gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <Link
-            href="/signin"
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-          >
-            Get Started
-          </Link>
+    <header className="sticky top-0 z-10 border-b border-border bg-white/90 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">AI Job Assistant</p>
+          <h1 className="text-base font-semibold text-slate-900">Find and track your next role</h1>
         </div>
+        <button className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
+          Upgrade
+        </button>
       </div>
     </header>
   );
