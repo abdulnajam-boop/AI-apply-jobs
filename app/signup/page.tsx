@@ -4,19 +4,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
 import { Navbar } from '@/components/navbar';
-import { getStoredUsers, saveStoredUsers, setAuthUser } from '@/lib/auth';
+import { getStoredUsers, initializeDefaultUsers, saveStoredUsers, setAuthUser } from '@/lib/auth';
 
 type UserProfile = {
   fullName: string;
   email: string;
   phone: string;
   location: string;
-  linkedInUrl: string;
-  portfolioUrl: string;
+  linkedin: string;
+  github: string;
   skills: string;
   education: string;
   certifications: string;
-  yearsOfExperience: string;
   recentJobTitles: string;
 };
 
@@ -25,12 +24,11 @@ const emptyProfile: UserProfile = {
   email: '',
   phone: '',
   location: '',
-  linkedInUrl: '',
-  portfolioUrl: '',
+  linkedin: '',
+  github: '',
   skills: '',
   education: '',
   certifications: '',
-  yearsOfExperience: '',
   recentJobTitles: '',
 };
 
@@ -44,13 +42,18 @@ export default function SignUpPage() {
   const [showPrefillNotice, setShowPrefillNotice] = useState(false);
 
   useEffect(() => {
-    getStoredUsers();
+    initializeDefaultUsers();
 
     const storedProfile = window.localStorage.getItem('applisynai_user_profile');
     if (storedProfile) {
       try {
-        const parsed = JSON.parse(storedProfile) as UserProfile;
-        setProfile({ ...emptyProfile, ...parsed });
+        const parsed = JSON.parse(storedProfile) as Record<string, string>;
+        setProfile({
+          ...emptyProfile,
+          ...parsed,
+          linkedin: parsed.linkedin || parsed.linkedInUrl || '',
+          github: parsed.github || parsed.portfolioUrl || '',
+        });
         setName(parsed.fullName || '');
         setEmail(parsed.email || '');
         setShowPrefillNotice(true);
@@ -77,10 +80,12 @@ export default function SignUpPage() {
     }
 
     const newUser = {
+      id: `user_${Date.now()}`,
       name: name.trim() || profile.fullName || 'New User',
       email: normalizedEmail,
       password,
       provider: 'local' as const,
+      createdAt: new Date().toISOString(),
     };
 
     saveStoredUsers([...users, newUser]);
@@ -90,7 +95,7 @@ export default function SignUpPage() {
       email: normalizedEmail,
     };
     window.localStorage.setItem('applisynai_user_profile', JSON.stringify(mergedProfile));
-    setAuthUser({ name: newUser.name, email: newUser.email, provider: 'local' });
+    setAuthUser({ id: newUser.id, name: newUser.name, email: newUser.email, provider: 'local' });
     router.push('/resume');
   };
 
@@ -103,14 +108,16 @@ export default function SignUpPage() {
       saveStoredUsers([
         ...users,
         {
+          id: 'user_google',
           name: 'Google User',
           email: googleUserEmail,
           provider: 'google',
+          createdAt: new Date().toISOString(),
         },
       ]);
     }
 
-    setAuthUser({ name: 'Google User', email: googleUserEmail, provider: 'google' });
+    setAuthUser({ id: 'user_google', name: 'Google User', email: googleUserEmail, provider: 'google' });
     router.push('/dashboard');
   };
 
@@ -164,20 +171,14 @@ export default function SignUpPage() {
               <input
                 className="rounded-lg border border-border px-3 py-2"
                 placeholder="LinkedIn URL"
-                value={profile.linkedInUrl}
-                onChange={(event) => updateProfileField('linkedInUrl', event.target.value)}
+                value={profile.linkedin}
+                onChange={(event) => updateProfileField('linkedin', event.target.value)}
               />
               <input
                 className="rounded-lg border border-border px-3 py-2"
                 placeholder="GitHub / Portfolio URL"
-                value={profile.portfolioUrl}
-                onChange={(event) => updateProfileField('portfolioUrl', event.target.value)}
-              />
-              <input
-                className="rounded-lg border border-border px-3 py-2"
-                placeholder="Years of experience"
-                value={profile.yearsOfExperience}
-                onChange={(event) => updateProfileField('yearsOfExperience', event.target.value)}
+                value={profile.github}
+                onChange={(event) => updateProfileField('github', event.target.value)}
               />
               <input
                 className="rounded-lg border border-border px-3 py-2"

@@ -4,26 +4,37 @@ import { useState } from 'react';
 import { Card } from '@/components/card';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { ResumeSelector } from '@/components/resume-selector';
-import { addResumeRecord, parseResumeProfile } from '@/lib/resume';
+import { getAuthUser } from '@/lib/auth';
+import { ACTIVE_RESUME_KEY, ResumeRecord, parseResumeProfile, upsertResume } from '@/lib/resume';
 
-const sampleAiResume = `Alex Rivera\nSeattle, WA\nalex.rivera@example.com\n(555) 111-2233\nhttps://linkedin.com/in/alexrivera\nhttps://github.com/alexrivera\n\nSenior Cloud Engineer\n8 years of experience\n\nSkills: AWS, Kubernetes, Terraform, CI/CD\nEducation: B.S. Computer Science\nCertifications: AWS Solutions Architect Professional`;
+const sampleAiResume = `Alex Rivera\nSeattle, WA\nalex.rivera@example.com\n(555) 111-2233\nhttps://linkedin.com/in/alexrivera\nhttps://github.com/alexrivera\n\nSenior Cloud Engineer\n\nSkills: AWS, Kubernetes, Terraform, CI/CD\nEducation: B.S. Computer Science\nCertifications: AWS Solutions Architect Professional`;
 
 export default function ResumeBuilderPage() {
   const [message, setMessage] = useState('');
 
   const handleSaveSampleAiResume = () => {
+    const authUser = getAuthUser();
+    if (!authUser) return;
+
+    const now = new Date().toISOString();
     const parsedProfile = parseResumeProfile(sampleAiResume);
-    addResumeRecord({
+    const aiResume: ResumeRecord = {
       id: `resume_${Date.now()}`,
-      name: 'AI Generated Resume',
+      ownerId: authUser.id,
+      name: 'AI Resume',
       source: 'ai_generated',
       fileName: 'ai-generated.txt',
-      createdAt: new Date().toISOString(),
+      fileType: 'text/plain',
+      fileSize: sampleAiResume.length,
+      createdAt: now,
+      updatedAt: now,
       resumeText: sampleAiResume,
       parsedProfile,
-    });
-    window.localStorage.setItem('applisynai_user_profile', JSON.stringify(parsedProfile));
-    setMessage('Sample AI resume saved. It is now available in Resume Selector.');
+    };
+
+    upsertResume(aiResume);
+    window.localStorage.setItem(ACTIVE_RESUME_KEY, aiResume.id);
+    setMessage('Sample AI-generated resume saved to your library.');
   };
 
   return (
@@ -42,7 +53,7 @@ export default function ResumeBuilderPage() {
               onClick={handleSaveSampleAiResume}
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
             >
-              Save sample AI resume
+              Save sample AI-generated resume
             </button>
             {message && <p className="text-sm text-emerald-700">{message}</p>}
           </div>

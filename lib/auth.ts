@@ -1,11 +1,14 @@
 export type StoredUser = {
+  id: string;
   name: string;
   email: string;
   password?: string;
   provider: 'local' | 'google';
+  createdAt: string;
 };
 
 export type AuthUser = {
+  id: string;
   name: string;
   email: string;
   provider: 'local' | 'google';
@@ -15,10 +18,12 @@ const USERS_KEY = 'applisynai_users';
 const AUTH_USER_KEY = 'applisynai_auth_user';
 
 const defaultAdminUser: StoredUser = {
+  id: 'user_admin',
   name: 'Admin User',
   email: 'admin',
   password: 'abdul1996',
   provider: 'local',
+  createdAt: new Date().toISOString(),
 };
 
 function parseUsers(value: string | null): StoredUser[] {
@@ -32,19 +37,30 @@ function parseUsers(value: string | null): StoredUser[] {
   }
 }
 
-export function getStoredUsers(): StoredUser[] {
-  if (typeof window === 'undefined') return [];
+export function initializeDefaultUsers() {
+  if (typeof window === 'undefined') return;
 
-  const users = parseUsers(window.localStorage.getItem(USERS_KEY));
-  const hasAdmin = users.some((user) => user.email.toLowerCase() === 'admin');
-
-  if (!hasAdmin) {
-    const nextUsers = [defaultAdminUser, ...users];
-    window.localStorage.setItem(USERS_KEY, JSON.stringify(nextUsers));
-    return nextUsers;
+  const existing = window.localStorage.getItem(USERS_KEY);
+  if (!existing) {
+    window.localStorage.setItem(USERS_KEY, JSON.stringify([defaultAdminUser]));
+    return;
   }
 
-  return users;
+  const users = parseUsers(existing);
+  const hasAdmin = users.some((user) => user.email.toLowerCase() === 'admin');
+  if (!hasAdmin) {
+    window.localStorage.setItem(USERS_KEY, JSON.stringify([defaultAdminUser, ...users]));
+  }
+}
+
+export function getStoredUsers(): StoredUser[] {
+  if (typeof window === 'undefined') return [];
+  initializeDefaultUsers();
+  return parseUsers(window.localStorage.getItem(USERS_KEY));
+}
+
+export function getDefaultAdminUser() {
+  return defaultAdminUser;
 }
 
 export function saveStoredUsers(users: StoredUser[]) {
@@ -72,9 +88,4 @@ export function getAuthUser(): AuthUser | null {
 export function clearAuthUser() {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(AUTH_USER_KEY);
-}
-
-export function isAdminCredential(emailOrUsername: string, password: string) {
-  const normalized = emailOrUsername.trim().toLowerCase();
-  return normalized === 'admin' && password === 'abdul1996';
 }

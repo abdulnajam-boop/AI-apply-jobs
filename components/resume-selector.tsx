@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ResumeRecord, SELECTED_RESUME_KEY, getResumes } from '@/lib/resume';
+import { ACTIVE_RESUME_KEY, ResumeRecord, getResumesForCurrentUser } from '@/lib/resume';
 
 type ResumeSelectorProps = {
   title?: string;
@@ -14,17 +14,19 @@ export function ResumeSelector({ title = 'Resume Selector' }: ResumeSelectorProp
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const savedResumes = getResumes();
-    setResumes(savedResumes);
+    const userResumes = getResumesForCurrentUser();
+    setResumes(userResumes);
 
-    const savedSelectedId = window.localStorage.getItem(SELECTED_RESUME_KEY) || savedResumes[0]?.id || '';
-    setSelectedResumeId(savedSelectedId);
+    const activeResumeId = window.localStorage.getItem(ACTIVE_RESUME_KEY) || userResumes[0]?.id || '';
+    setSelectedResumeId(activeResumeId);
   }, []);
+
+  const selectedResume = resumes.find((resume) => resume.id === selectedResumeId);
 
   const handleUseSelectedResume = () => {
     if (!selectedResumeId) return;
-    window.localStorage.setItem(SELECTED_RESUME_KEY, selectedResumeId);
-    setMessage('Selected resume is now active across AI tools.');
+    window.localStorage.setItem(ACTIVE_RESUME_KEY, selectedResumeId);
+    setMessage('Resume selected for AI tools.');
   };
 
   if (resumes.length === 0) {
@@ -52,18 +54,14 @@ export function ResumeSelector({ title = 'Resume Selector' }: ResumeSelectorProp
           </option>
         ))}
       </select>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={handleUseSelectedResume}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          Use selected resume
-        </button>
-        <Link href="/resume" className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-slate-700">
-          Upload another resume
-        </Link>
-      </div>
+      <button
+        type="button"
+        onClick={handleUseSelectedResume}
+        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+      >
+        Use this resume
+      </button>
+      {selectedResume && <p className="text-xs text-slate-500">Selected: {selectedResume.name}</p>}
       {message && <p className="text-xs text-emerald-700">{message}</p>}
     </div>
   );

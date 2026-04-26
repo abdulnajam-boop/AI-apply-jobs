@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
 import { Navbar } from '@/components/navbar';
-import { getStoredUsers, isAdminCredential, setAuthUser } from '@/lib/auth';
+import { getDefaultAdminUser, getStoredUsers, initializeDefaultUsers, setAuthUser } from '@/lib/auth';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -13,35 +13,36 @@ export default function SignInPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getStoredUsers();
+    initializeDefaultUsers();
   }, []);
 
   const handleSignIn = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
 
-    const users = getStoredUsers();
     const normalizedEmail = email.trim().toLowerCase();
+    const users = getStoredUsers();
 
-    const localUser = users.find(
-      (user) => user.provider === 'local' && user.email.toLowerCase() === normalizedEmail && user.password === password,
-    );
+    const user = users.find((item) => item.provider === 'local' && item.email.toLowerCase() === normalizedEmail && item.password === password);
 
-    if (localUser || isAdminCredential(email, password)) {
-      setAuthUser({
-        name: localUser?.name || 'Admin User',
-        email: localUser?.email || 'admin',
-        provider: 'local',
-      });
-      router.push('/dashboard');
+    if (!user) {
+      setError('Invalid email or password');
       return;
     }
 
-    setError('Invalid email or password');
+    setAuthUser({ id: user.id, name: user.name, email: user.email, provider: user.provider });
+    router.push('/dashboard');
+  };
+
+  const handleLoginAsTestUser = () => {
+    const admin = getDefaultAdminUser();
+    setAuthUser({ id: admin.id, name: admin.name, email: admin.email, provider: 'local' });
+    router.push('/dashboard');
   };
 
   const handleGoogleSignIn = () => {
     setAuthUser({
+      id: 'user_google',
       name: 'Google User',
       email: 'google-user@applisynai.mock',
       provider: 'google',
@@ -61,7 +62,7 @@ export default function SignInPage() {
             <input
               className="w-full rounded-lg border border-border px-3 py-2"
               type="text"
-              placeholder="Email or username"
+              placeholder="Email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -84,8 +85,16 @@ export default function SignInPage() {
 
           <button
             type="button"
-            onClick={handleGoogleSignIn}
+            onClick={handleLoginAsTestUser}
             className="mt-4 block w-full rounded-lg border border-border px-4 py-2 text-center text-sm font-semibold text-slate-700"
+          >
+            Login as Test User
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="mt-2 block w-full rounded-lg border border-border px-4 py-2 text-center text-sm font-semibold text-slate-700"
           >
             Continue with Google
           </button>
