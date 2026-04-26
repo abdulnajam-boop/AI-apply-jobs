@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Applisynai Job Assistant",
+  "description": "MVP extension scaffold for saving jobs and triggering Applisynai workflows.",
+  "version": "0.1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Applisynai"
+  },
+  "background": {
+    "service_worker": "background.ts",
+    "type": "module"
+  },
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.ts"],
+      "run_at": "document_idle"
+    }
+  ]
+}
