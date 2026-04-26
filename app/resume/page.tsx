@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/card';
 import { DashboardLayout } from '@/components/dashboard-layout';
 
-type UploadStatus = 'No file selected' | 'TXT extracted successfully' | 'PDF/DOCX parsing coming next.' | 'Unsupported file type';
+type UploadStatus = 'No file selected' | 'TXT extracted successfully' | 'Parsing coming next' | 'Unsupported file type';
 
 const acceptedTypes = '.pdf,.docx,.txt';
 
@@ -54,7 +54,7 @@ export default function ResumePage() {
     }
 
     if (extension === 'pdf' || extension === 'docx') {
-      setUploadStatus('PDF/DOCX parsing coming next.');
+      setUploadStatus('Parsing coming next');
       return;
     }
 
@@ -98,9 +98,11 @@ export default function ResumePage() {
             <p>
               <span className="font-semibold">Upload status:</span> {uploadStatus}
             </p>
-            <p>
-              <span className="font-semibold">Stored file object:</span> {storedFile ? 'Yes' : 'No'}
-            </p>
+            {storedFile && (
+              <p>
+                <span className="font-semibold">File selected:</span> Ready
+              </p>
+            )}
           </div>
 
           <div>
