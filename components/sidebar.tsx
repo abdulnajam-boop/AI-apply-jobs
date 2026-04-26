@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { clearAuthUser } from '@/lib/auth';
 
 const coreLinks = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -16,6 +20,13 @@ const aiToolsLinks = [
 ];
 
 export function Sidebar() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    clearAuthUser();
+    router.push('/');
+  };
+
   return (
     <aside className="w-full border-r border-border bg-white p-5 md:w-72">
       <Link href="/" className="flex items-center gap-3 pb-6">
@@ -54,6 +65,14 @@ export function Sidebar() {
           ))}
         </nav>
       </div>
+
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="mt-6 w-full rounded-lg border border-border px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+      >
+        Logout
+      </button>
     </aside>
   );
 }
