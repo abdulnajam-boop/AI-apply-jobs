@@ -31,6 +31,7 @@ export type ResumeRecord = {
 
 const RESUMES_KEY = 'applisynai_resumes';
 export const ACTIVE_RESUME_KEY = 'applisynai_active_resume_id';
+export const RESUME_LIBRARY_EVENT = 'applisynai:resume-library-changed';
 
 const emptyProfile: ParsedProfile = {
   fullName: '',
@@ -67,6 +68,7 @@ export function getResumes(): ResumeRecord[] {
 export function saveResumes(resumes: ResumeRecord[]) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(RESUMES_KEY, JSON.stringify(resumes));
+  window.dispatchEvent(new Event(RESUME_LIBRARY_EVENT));
 }
 
 export function getResumesForOwner(ownerId: string) {
@@ -85,6 +87,7 @@ export function getActiveResumeId() {
 export function setActiveResumeId(resumeId: string) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(ACTIVE_RESUME_KEY, resumeId);
+  window.dispatchEvent(new Event(RESUME_LIBRARY_EVENT));
 }
 
 export function parseResumeProfile(text: string): ParsedProfile {

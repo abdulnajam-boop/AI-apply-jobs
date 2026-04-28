@@ -2,7 +2,13 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ResumeRecord, getActiveResumeId, getResumesForCurrentUser, setActiveResumeId } from '@/lib/resume';
+import {
+  RESUME_LIBRARY_EVENT,
+  ResumeRecord,
+  getActiveResumeId,
+  getResumesForCurrentUser,
+  setActiveResumeId,
+} from '@/lib/resume';
 
 type ResumeSelectorProps = {
   title?: string;
@@ -14,11 +20,21 @@ export function ResumeSelector({ title = 'Resume Selector' }: ResumeSelectorProp
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const userResumes = getResumesForCurrentUser();
-    setResumes(userResumes);
+    const refresh = () => {
+      const userResumes = getResumesForCurrentUser();
+      setResumes(userResumes);
+      const activeId = getActiveResumeId() || userResumes[0]?.id || '';
+      setSelectedResumeId(activeId);
+    };
 
-    const activeId = getActiveResumeId() || userResumes[0]?.id || '';
-    setSelectedResumeId(activeId);
+    refresh();
+    window.addEventListener(RESUME_LIBRARY_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+
+    return () => {
+      window.removeEventListener(RESUME_LIBRARY_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
   }, []);
 
   const selectedResume = resumes.find((resume) => resume.id === selectedResumeId);

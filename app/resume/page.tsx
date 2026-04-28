@@ -11,6 +11,7 @@ import {
   getCurrentOwnerId,
   getResumesForCurrentUser,
   parseResumeProfile,
+  RESUME_LIBRARY_EVENT,
   setActiveResumeId,
   upsertResume,
 } from '@/lib/resume';
@@ -45,6 +46,13 @@ export default function ResumePage() {
 
   useEffect(() => {
     refreshUserResumes();
+    window.addEventListener(RESUME_LIBRARY_EVENT, refreshUserResumes);
+    window.addEventListener('storage', refreshUserResumes);
+
+    return () => {
+      window.removeEventListener(RESUME_LIBRARY_EVENT, refreshUserResumes);
+      window.removeEventListener('storage', refreshUserResumes);
+    };
   }, []);
 
   const handleFileClick = () => {

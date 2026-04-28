@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Card } from '@/components/card';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { ResumeSelector } from '@/components/resume-selector';
-import { getActiveResumeId, getResumesForCurrentUser } from '@/lib/resume';
+import { RESUME_LIBRARY_EVENT, getActiveResumeId, getResumesForCurrentUser } from '@/lib/resume';
 
 type MatchResult = {
   score: number;
@@ -26,6 +26,13 @@ export default function MatcherPage() {
 
   useEffect(() => {
     syncActiveResume();
+    window.addEventListener(RESUME_LIBRARY_EVENT, syncActiveResume);
+    window.addEventListener('storage', syncActiveResume);
+
+    return () => {
+      window.removeEventListener(RESUME_LIBRARY_EVENT, syncActiveResume);
+      window.removeEventListener('storage', syncActiveResume);
+    };
   }, []);
 
   const handleMatch = (event: FormEvent<HTMLFormElement>) => {
